@@ -5,7 +5,7 @@ def main():
     from sqlalchemy import create_engine
 
     # Connect to Postgres
-    engine = create_engine("postgresql+psycopg2://postgres:postgres@localhost:5432/postgres")
+    engine = create_engine("postgresql+psycopg2://airflow:airflow@postgres:5432/airflow")
 
     # Load both tables
     df_311 = pd.read_sql("SELECT * FROM nyc_311", engine)

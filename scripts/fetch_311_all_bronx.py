@@ -1,31 +1,28 @@
-# scripts/fetch_311_to_postgres.py
+# scripts/fetch_311_all_bronx.py
+# Alternative script to get ALL complaint types from BRONX for comparison
 
 def main():
     import requests
     import pandas as pd
-    from sqlalchemy import create_engine, text
+    from sqlalchemy import create_engine
     from datetime import datetime, timedelta
 
     # NYC 311 API endpoint
     API_URL = "https://data.cityofnewyork.us/resource/erm2-nwe9.json"
     
-    # Calculate date range for last 6 months (~180 days)
-    end_date = datetime.utcnow()
-    start_date = end_date - timedelta(days=180)
+    # Calculate date range for last 1 year
+    end_date = datetime.now()
+    start_date = end_date - timedelta(days=365)
     
-    # Enhanced parameters for specific query
+    # Parameters for ALL BRONX complaints (not just parking)
     params = {
         "$limit": 50000,  # Maximum allowed by NYC Open Data API
         "$order": "created_date DESC",
-        "$where": (
-            f"created_date >= '{start_date.strftime('%Y-%m-%d')}' "
-            f"AND created_date <= '{end_date.strftime('%Y-%m-%d')}' "
-            "AND complaint_type = 'Illegal Parking' AND borough = 'BRONX'"
-        ),
+        "$where": f"created_date >= '{start_date.strftime('%Y-%m-%d')}' AND created_date <= '{end_date.strftime('%Y-%m-%d')}' AND borough = 'BRONX'",
         "$select": "unique_key,created_date,complaint_type,descriptor,borough,latitude,longitude,incident_address,city"
     }
 
-    print(f"🔍 Fetching last 6 months of illegal parking complaints from BRONX...")
+    print(f"🔍 Fetching 1 year of ALL complaints from BRONX...")
     print(f"📅 Date range: {start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}")
     
     response = requests.get(API_URL, params=params)
@@ -36,13 +33,13 @@ def main():
     data = response.json()
     df = pd.DataFrame(data)
 
-    print(f"📊 Fetched {len(df)} illegal parking complaints from BRONX")
+    print(f"📊 Fetched {len(df)} total complaints from BRONX")
 
     if len(df) == 0:
         print("⚠️  No data found for the specified criteria")
         return
 
-    # Select and rename important columns (handle missing columns gracefully)
+    # Select and rename important columns
     available_columns = df.columns.tolist()
     required_columns = ["unique_key", "created_date", "complaint_type", "descriptor", "borough"]
     optional_columns = ["latitude", "longitude", "incident_address", "city"]
@@ -58,18 +55,16 @@ def main():
     df["created_at"] = pd.to_datetime(df["created_at"])
     
     print(f"📋 Columns available: {', '.join(df.columns.tolist())}")
+    print(f"🏷️  Complaint types found: {df['complaint_type'].nunique()}")
+    print(f"📊 Top complaint types:")
+    print(df['complaint_type'].value_counts().head(5))
 
     # Load to Postgres
     engine = create_engine("postgresql+psycopg2://airflow:airflow@postgres:5432/airflow")
-    with engine.begin() as conn:
-        conn.execute(text("DROP VIEW IF EXISTS rat_rain_analysis CASCADE"))
-    df.to_sql("nyc_311", engine, if_exists="replace", index=False)
+    df.to_sql("nyc_311_all_bronx", engine, if_exists="replace", index=False)
 
-    print(f"✅ Successfully saved {len(df)} BRONX illegal parking complaints to Postgres!")
+    print(f"✅ Successfully saved {len(df)} BRONX complaints to 'nyc_311_all_bronx' table!")
     print(f"📈 Data range: {df['created_at'].min()} to {df['created_at'].max()}")
-    if len(df) > 0:
-        print(f"📍 Sample addresses: {df['incident_address'].dropna().head(3).tolist() if 'incident_address' in df.columns else 'Address data not available'}")
 
 if __name__ == "__main__":
     main()
-

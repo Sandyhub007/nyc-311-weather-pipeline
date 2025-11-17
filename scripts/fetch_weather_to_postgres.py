@@ -10,10 +10,12 @@ def main():
     latitude = 40.7128
     longitude = -74.0060
 
-    # Get yesterday's date (you can change this for testing)
+    # Get last 6 months window
     today = datetime.utcnow().date()
-    yesterday = today - timedelta(days=1)
-    start_date = end_date = yesterday.strftime('%Y-%m-%d')
+    start_date_dt = today - timedelta(days=180)
+    end_date_dt = today
+    start_date = start_date_dt.strftime('%Y-%m-%d')
+    end_date = end_date_dt.strftime('%Y-%m-%d')
 
     # Open-Meteo API (no key needed)
     url = "https://archive-api.open-meteo.com/v1/archive"
@@ -26,7 +28,7 @@ def main():
         "timezone": "America/New_York"
     }
 
-    print(f"Fetching weather for {start_date}...")
+    print(f"Fetching weather from {start_date} to {end_date}...")
     response = requests.get(url, params=params)
 
     if response.status_code != 200:
@@ -47,7 +49,7 @@ def main():
     print("Fetched weather rows:", len(df))
 
     # Connect to Postgres and write to table
-    engine = create_engine("postgresql+psycopg2://postgres:postgres@localhost:5432/postgres")
+    engine = create_engine("postgresql+psycopg2://airflow:airflow@postgres:5432/airflow")
     df.to_sql("nyc_weather", engine, if_exists="replace", index=False)
 
     print("✅ Done! Weather data saved to Postgres.")
