@@ -1,0 +1,56 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+*.egg-info/
+dist/
+build/
+
+# Airflow
+logs/
+airflow.db
+airflow.cfg
+unittests.cfg
+webserver_config.py
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# ML Models (too large for git)
+models/*.pkl
+models/random_forest_model.pkl
+models/xgboost_model.pkl
+
+# Spark Models (can be large)
+models/spark_lr_model/
+models/spark_scaler/
+
+# Reports (generated files)
+reports/*.png
+reports/*.csv
+reports/*.html
+
+# Docker
+*.log
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Jupyter
+.ipynb_checkpoints/
+
